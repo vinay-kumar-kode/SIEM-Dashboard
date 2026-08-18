@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Sentinel SIEM - Incidents</title>
+
+<link rel="stylesheet" href="incidents.css">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- Sidebar -->
+
+<aside class="sidebar">
+
+<div class="logo">
+
+<i class="fa-solid fa-shield-halved"></i>
+
+<h2>Sentinel SIEM</h2>
+
+</div>
+
+<ul class="menu">
+
+<li>
+<a href="dashboard.html">
+<i class="fa-solid fa-chart-line"></i>
+Dashboard
+</a>
+</li>
+
+<li>
+<a href="logs.html">
+<i class="fa-solid fa-file-lines"></i>
+Logs
+</a>
+</li>
+
+<li>
+<a href="alerts.html">
+<i class="fa-solid fa-bell"></i>
+Alerts
+</a>
+</li>
+
+<li class="active">
+<a href="incidents.html">
+<i class="fa-solid fa-triangle-exclamation"></i>
+Incidents
+</a>
+</li>
+
+<li>
+<a href="index.html">
+<i class="fa-solid fa-right-from-bracket"></i>
+Logout
+</a>
+</li>
+
+</ul>
+
+</aside>
+
+<!-- Main -->
+
+<main class="main">
+
+<header class="header">
+
+<h1>Incident Management</h1>
+
+<div id="clock"></div>
+
+</header>
+
+<!-- Cards -->
+
+<section class="cards">
+
+<div class="card">
+
+<h3>Total Incidents</h3>
+
+<h2 id="totalIncidents">0</h2>
+
+</div>
+
+<div class="card">
+
+<h3>Open</h3>
+
+<h2 id="openIncidents">0</h2>
+
+</div>
+
+<div class="card">
+
+<h3>In Progress</h3>
+
+<h2 id="progressIncidents">0</h2>
+
+</div>
+
+<div class="card">
+
+<h3>Closed</h3>
+
+<h2 id="closedIncidents">0</h2>
+
+</div>
+
+</section>
+
+<!-- Search -->
+
+<section class="controls">
+
+<input
+type="text"
+id="searchIncident"
+placeholder="Search Incident...">
+
+<select id="statusFilter">
+
+<option value="ALL">All Status</option>
+<option value="Open">Open</option>
+<option value="In Progress">In Progress</option>
+<option value="Closed">Closed</option>
+
+</select>
+
+</section>
+
+<!-- Table -->
+
+<section class="table-section">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+<th>Time</th>
+<th>Priority</th>
+<th>Incident</th>
+<th>Assigned To</th>
+<th>Status</th>
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody id="incidentTable">
+
+</tbody>
+
+</table>
+
+</section>
+
+</main>
+
+</div>
+
+<script src="incidents.js"></script>
+
+</body>
+
+</html>

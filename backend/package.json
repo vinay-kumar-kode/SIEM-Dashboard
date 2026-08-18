@@ -1,0 +1,19 @@
+{
+  "name": "sentinel-siem-backend",
+  "version": "1.0.0",
+  "description": "Sentinel SIEM Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.x",
+    "dotenv": "^16.x",
+    "express": "^5.x",
+    "mongoose": "^8.x"
+  },
+  "devDependencies": {
+    "nodemon": "^3.x"
+  }
+}

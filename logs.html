@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Sentinel SIEM - Logs</title>
+
+    <link rel="stylesheet" href="logs.css">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <i class="fa-solid fa-shield-halved"></i>
+
+            <h2>Sentinel SIEM</h2>
+
+        </div>
+
+        <ul class="menu">
+
+            <li>
+                <a href="dashboard.html">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="logs.html">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Logs
+                </a>
+            </li>
+
+            <li>
+                <a href="alerts.html">
+                    <i class="fa-solid fa-bell"></i>
+                    Alerts
+                </a>
+            </li>
+
+            <li>
+                <a href="index.html">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </li>
+
+        </ul>
+
+    </aside>
+
+    <!-- Main -->
+
+    <main class="main">
+
+        <header class="header">
+
+            <h1>Security Logs</h1>
+
+            <div id="clock"></div>
+
+        </header>
+
+        <!-- Controls -->
+
+        <section class="controls">
+
+            <input
+                type="text"
+                id="searchBox"
+                placeholder="Search IP or Event...">
+
+            <select id="severityFilter">
+
+                <option value="ALL">All Severity</option>
+
+                <option value="LOW">LOW</option>
+
+                <option value="MEDIUM">MEDIUM</option>
+
+                <option value="HIGH">HIGH</option>
+
+                <option value="CRITICAL">CRITICAL</option>
+
+            </select>
+
+            <button id="exportBtn">
+
+                <i class="fa-solid fa-download"></i>
+
+                Export
+
+            </button>
+
+        </section>
+
+        <!-- Summary -->
+
+        <section class="summary">
+
+            <div class="summary-card">
+
+                <h3>Total Logs</h3>
+
+                <h2 id="logCount">0</h2>
+
+            </div>
+
+        </section>
+
+        <!-- Logs Table -->
+
+        <section class="table-section">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Time</th>
+
+                        <th>Source IP</th>
+
+                        <th>Severity</th>
+
+                        <th>Event</th>
+
+                        <th>Status</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="logsTable">
+
+                </tbody>
+
+            </table>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="logs.js"></script>
+
+</body>
+
+</html>

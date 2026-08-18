@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel SIEM Dashboard</title>
+
+    <link rel="stylesheet" href="dashboard.css">
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h2>Sentinel SIEM</h2>
+        </div>
+
+        <ul class="menu">
+
+            <li class="active">
+                <a href="dashboard.html">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+            </li>
+
+            <li>
+                <a href="logs.html">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Logs
+                </a>
+            </li>
+
+            <li>
+                <a href="alerts.html">
+                    <i class="fa-solid fa-bell"></i>
+                    Alerts
+                </a>
+            </li>
+
+            <li>
+                <a href="incidents.html">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Incidents
+                </a>
+            </li>
+
+            <li>
+                <a href="reports.html">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    Reports
+                </a>
+            </li>
+
+            <li>
+                <a href="users.html">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+            </li>
+
+            <li>
+                <a href="settings.html">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </li>
+
+            <li>
+                <a href="index.html">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </li>
+
+        </ul>
+
+    </aside>
+
+    <!-- Main Content -->
+
+    <main class="main">
+
+        <!-- Header -->
+
+        <header class="header">
+
+            <div class="header-left">
+
+                <h1>Security Operations Center</h1>
+
+                <p>Enterprise Threat Monitoring Dashboard</p>
+
+            </div>
+
+            <div class="header-right">
+
+                <div class="search">
+
+                    <i class="fa-solid fa-search"></i>
+
+                    <input
+                        type="text"
+                        placeholder="Search...">
+
+                </div>
+
+                <div class="notification">
+
+                    <i class="fa-solid fa-bell"></i>
+
+                    <span class="count">3</span>
+
+                </div>
+
+                <div class="clock" id="clock">
+                    --:--:--
+                </div>
+
+                <div class="profile">
+
+                    <i class="fa-solid fa-circle-user"></i>
+
+                    <span>Admin</span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- Statistics Cards -->
+
+        <section class="cards">
+
+            <div class="card">
+
+                <h4>Total Logs</h4>
+
+                <h2 id="totalLogs">0</h2>
+
+                <p>Today's Events</p>
+
+            </div>
+
+            <div class="card">
+
+                <h4>Active Alerts</h4>
+
+                <h2 id="activeAlerts">0</h2>
+
+                <p>Require Action</p>
+
+            </div>
+
+            <div class="card">
+
+                <h4>Critical Alerts</h4>
+
+                <h2 id="criticalAlerts">0</h2>
+
+                <p>Immediate Response</p>
+
+            </div>
+
+            <div class="card">
+
+                <h4>Online Hosts</h4>
+
+                <h2 id="onlineHosts">0</h2>
+
+                <p>Connected Devices</p>
+
+            </div>
+
+            <div class="card">
+
+                <h4>Threat Score</h4>
+
+                <h2 id="threatScore">0%</h2>
+
+                <p>Current Risk</p>
+
+            </div>
+
+        </section>
+
+        <!-- Charts -->
+
+        <section class="charts">
+
+            <div class="chart-card">
+
+                <h3>Event Timeline</h3>
+
+                <canvas id="timelineChart"></canvas>
+
+            </div>
+
+            <div class="chart-card">
+
+                <h3>Severity Distribution</h3>
+
+                <canvas id="severityChart"></canvas>
+
+            </div>
+
+        </section>
+
+        <!-- Tables -->
+
+        <section class="tables">
+
+            <div class="table-card">
+
+                <h3>Recent Alerts</h3>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Time</th>
+                            <th>Severity</th>
+                            <th>Attack</th>
+                            <th>Status</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="alertTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div class="table-card">
+
+                <h3>Recent Logs</h3>
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Time</th>
+                            <th>Source IP</th>
+                            <th>Event</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="logTable">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="dashboard.js"></script>
+
+</body>
+</html>

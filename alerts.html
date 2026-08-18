@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Sentinel SIEM - Alerts</title>
+
+    <link rel="stylesheet" href="alerts.css">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Sidebar -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h2>Sentinel SIEM</h2>
+        </div>
+
+        <ul class="menu">
+
+            <li>
+                <a href="dashboard.html">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+            </li>
+
+            <li>
+                <a href="logs.html">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Logs
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="alerts.html">
+                    <i class="fa-solid fa-bell"></i>
+                    Alerts
+                </a>
+            </li>
+
+            <li>
+                <a href="incidents.html">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Incidents
+                </a>
+            </li>
+
+            <li>
+                <a href="index.html">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </li>
+
+        </ul>
+
+    </aside>
+
+    <!-- Main Content -->
+
+    <main class="main">
+
+        <header class="header">
+
+            <h1>Security Alerts</h1>
+
+            <div id="clock"></div>
+
+        </header>
+
+        <!-- Alert Summary -->
+
+        <section class="cards">
+
+            <div class="card">
+                <h3>Total Alerts</h3>
+                <h2 id="totalAlerts">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Critical</h3>
+                <h2 id="criticalCount">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Open Alerts</h3>
+                <h2 id="openCount">0</h2>
+            </div>
+
+            <div class="card">
+                <h3>Resolved</h3>
+                <h2 id="resolvedCount">0</h2>
+            </div>
+
+        </section>
+
+        <!-- Search -->
+
+        <section class="controls">
+
+            <input
+                type="text"
+                id="searchAlert"
+                placeholder="Search Alert...">
+
+            <select id="priorityFilter">
+
+                <option value="ALL">All Priority</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="HIGH">High</option>
+                <option value="MEDIUM">Medium</option>
+
+            </select>
+
+        </section>
+
+        <!-- Alerts Table -->
+
+        <section class="table-section">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Time</th>
+                        <th>Priority</th>
+                        <th>Source IP</th>
+                        <th>Attack</th>
+                        <th>Status</th>
+                        <th>Action</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="alertTable">
+
+                </tbody>
+
+            </table>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="alerts.js"></script>
+
+</body>
+</html>

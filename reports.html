@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Sentinel SIEM - Reports</title>
+
+<link rel="stylesheet" href="reports.css">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- Sidebar -->
+
+<aside class="sidebar">
+
+<div class="logo">
+
+<i class="fa-solid fa-shield-halved"></i>
+
+<h2>Sentinel SIEM</h2>
+
+</div>
+
+<ul class="menu">
+
+<li>
+<a href="dashboard.html">
+<i class="fa-solid fa-chart-line"></i>
+Dashboard
+</a>
+</li>
+
+<li>
+<a href="logs.html">
+<i class="fa-solid fa-file-lines"></i>
+Logs
+</a>
+</li>
+
+<li>
+<a href="alerts.html">
+<i class="fa-solid fa-bell"></i>
+Alerts
+</a>
+</li>
+
+<li>
+<a href="incidents.html">
+<i class="fa-solid fa-triangle-exclamation"></i>
+Incidents
+</a>
+</li>
+
+<li class="active">
+<a href="reports.html">
+<i class="fa-solid fa-chart-pie"></i>
+Reports
+</a>
+</li>
+
+<li>
+<a href="index.html">
+<i class="fa-solid fa-right-from-bracket"></i>
+Logout
+</a>
+</li>
+
+</ul>
+
+</aside>
+
+<!-- Main -->
+
+<main class="main">
+
+<header class="header">
+
+<h1>Security Reports</h1>
+
+<div id="clock"></div>
+
+</header>
+
+<!-- Cards -->
+
+<section class="cards">
+
+<div class="card">
+
+<h3>Total Logs</h3>
+
+<h2 id="logsCount">0</h2>
+
+</div>
+
+<div class="card">
+
+<h3>Total Alerts</h3>
+
+<h2 id="alertsCount">0</h2>
+
+</div>
+
+<div class="card">
+
+<h3>Total Incidents</h3>
+
+<h2 id="incidentCount">0</h2>
+
+</div>
+
+<div class="card">
+
+<h3>Threat Score</h3>
+
+<h2 id="threatScore">0%</h2>
+
+</div>
+
+</section>
+
+<!-- Charts -->
+
+<section class="charts">
+
+<div class="chart-card">
+
+<h3>Weekly Events</h3>
+
+<canvas id="weeklyChart"></canvas>
+
+</div>
+
+<div class="chart-card">
+
+<h3>Threat Distribution</h3>
+
+<canvas id="pieChart"></canvas>
+
+</div>
+
+</section>
+
+<!-- Export -->
+
+<section class="export">
+
+<button id="csvBtn">
+
+<i class="fa-solid fa-file-csv"></i>
+
+Export CSV
+
+</button>
+
+<button id="pdfBtn">
+
+<i class="fa-solid fa-file-pdf"></i>
+
+Export PDF
+
+</button>
+
+</section>
+
+</main>
+
+</div>
+
+<script src="reports.js"></script>
+
+</body>
+
+</html>
