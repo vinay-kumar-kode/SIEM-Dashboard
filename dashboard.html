@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sentinel SIEM Dashboard</title>
 
+    <link rel="stylesheet" href="layout.css">
+
+    <link rel="stylesheet" href="components.css">
+
     <link rel="stylesheet" href="dashboard.css">
 
     <link rel="stylesheet"
@@ -64,14 +68,14 @@
                 </a>
             </li>
 
-            <li>
+            <li data-admin-only>
                 <a href="users.html">
                     <i class="fa-solid fa-users"></i>
                     Users
                 </a>
             </li>
 
-            <li>
+            <li data-admin-only>
                 <a href="settings.html">
                     <i class="fa-solid fa-gear"></i>
                     Settings
@@ -79,7 +83,7 @@
             </li>
 
             <li>
-                <a href="index.html">
+                <a href="#" onclick="logout(); return false;">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     Logout
                 </a>
@@ -113,15 +117,18 @@
 
                     <input
                         type="text"
-                        placeholder="Search...">
+                        id="globalSearch"
+                        placeholder="Search logs, alerts, IPs...">
 
                 </div>
 
-                <div class="notification">
+                <div class="notification"
+                     onclick="window.location.href='alerts.html'"
+                     title="Open alerts requiring attention">
 
                     <i class="fa-solid fa-bell"></i>
 
-                    <span class="count">3</span>
+                    <span class="count" id="alertCount">0</span>
 
                 </div>
 
@@ -133,7 +140,13 @@
 
                     <i class="fa-solid fa-circle-user"></i>
 
-                    <span>Admin</span>
+                    <div class="profile-text">
+
+                        <span data-profile-name>Analyst</span>
+
+                        <small data-profile-role>analyst</small>
+
+                    </div>
 
                 </div>
 
@@ -151,7 +164,7 @@
 
                 <h2 id="totalLogs">0</h2>
 
-                <p>Today's Events</p>
+                <p>Events Collected</p>
 
             </div>
 
@@ -177,11 +190,21 @@
 
             <div class="card">
 
+                <h4>Open Incidents</h4>
+
+                <h2 id="openIncidents">0</h2>
+
+                <p>Under Investigation</p>
+
+            </div>
+
+            <div class="card">
+
                 <h4>Online Hosts</h4>
 
                 <h2 id="onlineHosts">0</h2>
 
-                <p>Connected Devices</p>
+                <p>Distinct Sources</p>
 
             </div>
 
@@ -203,9 +226,11 @@
 
             <div class="chart-card">
 
-                <h3>Event Timeline</h3>
+                <h3>Event Timeline <small>last 24 hours</small></h3>
 
-                <canvas id="timelineChart"></canvas>
+                <div class="chart-box">
+                    <canvas id="timelineChart"></canvas>
+                </div>
 
             </div>
 
@@ -213,7 +238,9 @@
 
                 <h3>Severity Distribution</h3>
 
-                <canvas id="severityChart"></canvas>
+                <div class="chart-box">
+                    <canvas id="severityChart"></canvas>
+                </div>
 
             </div>
 
@@ -225,54 +252,69 @@
 
             <div class="table-card">
 
-                <h3>Recent Alerts</h3>
+                <h3>
+                    Recent Alerts
+                    <a class="card-link" href="alerts.html">View all</a>
+                </h3>
 
-                <table>
+                <div class="table-scroll">
 
-                    <thead>
+                    <table>
 
-                        <tr>
+                        <thead>
 
-                            <th>Time</th>
-                            <th>Severity</th>
-                            <th>Attack</th>
-                            <th>Status</th>
+                            <tr>
 
-                        </tr>
+                                <th>Time</th>
+                                <th>Severity</th>
+                                <th>Attack</th>
+                                <th>Status</th>
 
-                    </thead>
+                            </tr>
 
-                    <tbody id="alertTable">
+                        </thead>
 
-                    </tbody>
+                        <tbody id="alertTable">
 
-                </table>
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             </div>
 
             <div class="table-card">
 
-                <h3>Recent Logs</h3>
+                <h3>
+                    Recent Logs
+                    <a class="card-link" href="logs.html">View all</a>
+                </h3>
 
-                <table>
+                <div class="table-scroll">
 
-                    <thead>
+                    <table>
 
-                        <tr>
+                        <thead>
 
-                            <th>Time</th>
-                            <th>Source IP</th>
-                            <th>Event</th>
+                            <tr>
 
-                        </tr>
+                                <th>Time</th>
+                                <th>Source IP</th>
+                                <th>Event</th>
+                                <th>Severity</th>
 
-                    </thead>
+                            </tr>
 
-                    <tbody id="logTable">
+                        </thead>
 
-                    </tbody>
+                        <tbody id="logTable">
 
-                </table>
+                        </tbody>
+
+                    </table>
+
+                </div>
 
             </div>
 
@@ -281,6 +323,8 @@
     </main>
 
 </div>
+
+<script src="api.js"></script>
 
 <script src="dashboard.js"></script>
 

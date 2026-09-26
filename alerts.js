@@ -2,268 +2,277 @@
 // Sentinel SIEM - Alerts Module
 // alerts.js
 // ======================================
+//
+// Rows come from GET /api/alerts. The acknowledge and resolve buttons call
+// the real PATCH endpoints, so an analyst's decision survives a reload and is
+// visible to everyone else looking at the same collection.
 
-// ---------- Current Time ----------
+const state = {
 
-function getCurrentTime() {
+    page: 1,
 
-    const now = new Date();
+    limit: 25,
 
-    return now.toLocaleString("en-IN", {
+    severity: "ALL",
 
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false
+    status: "ALL",
 
-    });
+    search: "",
 
-}
+    rows: []
+};
 
-// ---------- Live Clock ----------
+// Guards against a double click firing two PATCHes for the same alert.
+const busy = new Set();
 
-function updateClock() {
+// ---------- Render ----------
 
-    document.getElementById("clock").innerHTML = getCurrentTime();
+const statusClass = (value) => {
 
-}
+    // "In Progress" would become "in progress" with a naive lowercase, which
+    // matches no badge rule.
+    return String(value || "").toLowerCase().replace(/\s+/g, "-");
 
-updateClock();
+};
 
-setInterval(updateClock,1000);
+const renderRows = (rows) => {
 
-// ---------- Sample Alerts ----------
+    const body = document.getElementById("alertTable");
 
-let alerts=[
-
-{
-time:getCurrentTime(),
-priority:"CRITICAL",
-ip:"192.168.1.50",
-attack:"SQL Injection",
-status:"Open"
-},
-
-{
-time:getCurrentTime(),
-priority:"HIGH",
-ip:"192.168.1.25",
-attack:"Port Scan",
-status:"Open"
-},
-
-{
-time:getCurrentTime(),
-priority:"MEDIUM",
-ip:"192.168.1.18",
-attack:"Multiple Failed Login",
-status:"Acknowledged"
-},
-
-{
-time:getCurrentTime(),
-priority:"HIGH",
-ip:"192.168.1.40",
-attack:"Malware Detection",
-status:"Resolved"
-}
-
-];
-
-// ---------- Load Alerts ----------
-
-function loadAlerts(data=alerts){
-
-    let html="";
-
-    let critical=0;
-    let open=0;
-    let resolved=0;
-
-    data.forEach((alert,index)=>{
-
-        if(alert.priority==="CRITICAL") critical++;
-        if(alert.status==="Open") open++;
-        if(alert.status==="Resolved") resolved++;
-
-        html+=`
-
-        <tr>
-
-        <td>${alert.time}</td>
-
-        <td class="${alert.priority.toLowerCase()}">
-            ${alert.priority}
-        </td>
-
-        <td>${alert.ip}</td>
-
-        <td>${alert.attack}</td>
-
-        <td class="${alert.status.toLowerCase().replace(" ","")}">
-            ${alert.status}
-        </td>
-
-        <td>
-
-        <button
-            class="ack-btn"
-            onclick="acknowledgeAlert(${index})">
-
-            Acknowledge
-
-        </button>
-
-        <button
-            class="resolve-btn"
-            onclick="resolveAlert(${index})">
-
-            Resolve
-
-        </button>
-
-        </td>
-
-        </tr>
-
-        `;
-
-    });
-
-    document.getElementById("alertTable").innerHTML=html;
-
-    document.getElementById("totalAlerts").innerHTML=data.length;
-
-    document.getElementById("criticalCount").innerHTML=critical;
-
-    document.getElementById("openCount").innerHTML=open;
-
-    document.getElementById("resolvedCount").innerHTML=resolved;
-
-}
-
-loadAlerts();
-
-// ---------- Search ----------
-
-document.getElementById("searchAlert").addEventListener("keyup",function(){
-
-    const value=this.value.toLowerCase();
-
-    const filtered=alerts.filter(alert=>
-
-        alert.ip.toLowerCase().includes(value) ||
-
-        alert.attack.toLowerCase().includes(value)
-
-    );
-
-    loadAlerts(filtered);
-
-});
-
-// ---------- Filter ----------
-
-document.getElementById("priorityFilter").addEventListener("change",function(){
-
-    const level=this.value;
-
-    if(level==="ALL"){
-
-        loadAlerts();
-
+    if (!body) {
         return;
+    }
+
+    if (!rows.length) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-state">
+                    <strong>No matching alerts</strong>
+                    Try a different severity or clear the search box.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const me = getUser();
+
+    body.innerHTML = rows.map(alert => {
+
+        const locked = busy.has(alert._id);
+
+        // Acknowledging or resolving is only meaningful from Open or
+        // Acknowledged, so the buttons disappear once an alert is Resolved.
+        const actionable = alert.status !== "Resolved";
+
+        return `
+        <tr class="row-fade">
+            <td>${escapeHtml(formatDateTime(alert.timestamp))}</td>
+            <td><span class="badge badge-${severityClass(alert.severity)}">${escapeHtml(alert.severity)}</span></td>
+            <td>${escapeHtml(alert.sourceIp)}</td>
+            <td title="${escapeHtml(alert.description || "")}">${escapeHtml(alert.attackType)}</td>
+            <td><span class="badge badge-${statusClass(alert.status)}">${escapeHtml(alert.status)}</span></td>
+            <td class="actions">
+                ${actionable ? `
+                    <button class="btn btn-sm btn-warn" data-ack="${alert._id}" ${locked ? "disabled" : ""}>
+                        ${alert.status === "Acknowledged" ? "Ack'd" : "Acknowledge"}
+                    </button>
+                    <button class="btn btn-sm btn-ok" data-resolve="${alert._id}" ${locked ? "disabled" : ""}>
+                        Resolve
+                    </button>
+                ` : `<span class="muted">-</span>`}
+            </td>
+        </tr>
+    `;
+
+    }).join("");
+
+    // Delegated rather than inline onclick: the ids are Mongo ObjectIds and
+    // inlining them into a handler string would be avoidable injection.
+    body.querySelectorAll("[data-ack]").forEach(button => {
+        button.addEventListener("click", () => act(button.dataset.ack, "acknowledge"));
+    });
+
+    body.querySelectorAll("[data-resolve]").forEach(button => {
+        button.addEventListener("click", () => act(button.dataset.resolve, "resolve"));
+    });
+
+};
+
+const renderSummary = (stats) => {
+
+    setText("totalAlerts", stats.total);
+    setText("criticalCount", stats.critical);
+    setText("openCount", stats.open);
+    setText("acknowledgedCount", stats.acknowledged);
+    setText("resolvedCount", stats.resolved);
+
+};
+
+// ---------- Load ----------
+
+const load = async () => {
+
+    try {
+
+        const query = buildQuery({
+            page: state.page,
+            limit: state.limit,
+            severity: state.severity,
+            status: state.status,
+            search: state.search
+        });
+
+        const data = await apiGet(`/alerts${query}`);
+
+        if (data.page > data.pages) {
+            state.page = data.pages;
+            return load();
+        }
+
+        state.rows = data.data;
+
+        renderRows(data.data);
+
+        renderPagination("alertPagination", data, page => {
+            state.page = page;
+            load();
+        });
+
+    } catch (error) {
+
+        console.error(error);
+        toast(error.message || "Could not load alerts", "error");
 
     }
 
-    const filtered=alerts.filter(alert=>alert.priority===level);
+};
 
-    loadAlerts(filtered);
+const loadStats = async () => {
 
-});
+    try {
 
-// ---------- Acknowledge ----------
+        const data = await apiGet("/alerts/stats");
 
-function acknowledgeAlert(index){
+        renderSummary(data.statistics);
 
-    alerts[index].status="Acknowledged";
+    } catch (error) {
 
-    loadAlerts();
+        console.error(error);
 
-}
+    }
 
-// ---------- Resolve ----------
+};
 
-function resolveAlert(index){
+// ---------- Actions ----------
 
-    alerts[index].status="Resolved";
+const act = async (id, action) => {
 
-    loadAlerts();
+    if (busy.has(id)) {
+        return;
+    }
 
-}
+    busy.add(id);
 
-// ---------- Random Data ----------
+    const user = getUser();
 
-const attacks=[
+    try {
 
-"SQL Injection",
-"Port Scan",
-"Brute Force",
-"Malware",
-"DDoS Attack",
-"XSS Attack",
-"Unauthorized Login",
-"Ransomware"
+        // The controller stamps the analyst name from the request body; the
+        // session copy is the honest answer for who is clicking.
+        await apiPatch(`/alerts/${id}/${action}`, { analyst: (user && user.displayName) || "unknown" });
 
-];
+        toast(action === "acknowledge" ? "Alert acknowledged" : "Alert resolved", "success");
 
-const priorities=[
+        await load();
+        await loadStats();
 
-"MEDIUM",
-"HIGH",
-"CRITICAL"
+    } catch (error) {
 
-];
+        toast(error.message || "Action failed", "error");
 
-function randomIP(){
+    } finally {
 
-    return "192.168.1."+Math.floor(Math.random()*254+1);
+        busy.delete(id);
 
-}
+    }
 
-// ---------- Live Alert Generation ----------
+};
 
-function addRandomAlert(){
+const escalate = async (id) => {
 
-    const newAlert={
+    try {
 
-        time:getCurrentTime(),
+        await apiPost("/incidents", { priority: "High", title: "Escalated from alert", alerts: [id] });
 
-        priority:priorities[Math.floor(Math.random()*priorities.length)],
+        toast("Incident created from alert", "success");
 
-        ip:randomIP(),
+    } catch (error) {
 
-        attack:attacks[Math.floor(Math.random()*attacks.length)],
+        toast(error.message || "Could not create incident", "error");
 
-        status:"Open"
+    }
 
+};
+
+// ---------- Controls ----------
+
+const initControls = () => {
+
+    const search = document.getElementById("searchAlert");
+
+    search.addEventListener("input", debounce(() => {
+        state.search = search.value.trim();
+        state.page = 1;
+        load();
+    }, 350));
+
+    const bindSelect = (id, key) => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.addEventListener("change", () => {
+            state[key] = select.value;
+            state.page = 1;
+            load();
+        });
     };
 
-    alerts.unshift(newAlert);
+    bindSelect("priorityFilter", "severity");
+    bindSelect("statusFilter", "status");
 
-    if(alerts.length>100){
-
-        alerts.pop();
-
+    const limit = document.getElementById("limitSelect");
+    if (limit) {
+        limit.addEventListener("change", () => {
+            state.limit = parseInt(limit.value, 10);
+            state.page = 1;
+            load();
+        });
     }
 
-    loadAlerts();
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+        load();
+        loadStats();
+    });
 
+};
+
+// ---------- Start ----------
+
+const initAlerts = async () => {
+
+    if (!initPage()) {
+        return;
+    }
+
+    initControls();
+
+    await load();
+    await loadStats();
+
+};
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAlerts);
+} else {
+    initAlerts();
 }
-
-// Generate a new alert every 10 seconds
-
-setInterval(addRandomAlert,10000);

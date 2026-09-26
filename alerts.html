@@ -10,6 +10,10 @@
 
     <title>Sentinel SIEM - Alerts</title>
 
+    <link rel="stylesheet" href="layout.css">
+
+    <link rel="stylesheet" href="components.css">
+
     <link rel="stylesheet" href="alerts.css">
 
     <link rel="stylesheet"
@@ -20,8 +24,6 @@
 <body>
 
 <div class="container">
-
-    <!-- Sidebar -->
 
     <aside class="sidebar">
 
@@ -61,7 +63,28 @@
             </li>
 
             <li>
-                <a href="index.html">
+                <a href="reports.html">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    Reports
+                </a>
+            </li>
+
+            <li data-admin-only>
+                <a href="users.html">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+            </li>
+
+            <li data-admin-only>
+                <a href="settings.html">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </li>
+
+            <li>
+                <a href="#" onclick="logout(); return false;">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     Logout
                 </a>
@@ -71,13 +94,14 @@
 
     </aside>
 
-    <!-- Main Content -->
-
     <main class="main">
 
         <header class="header">
 
-            <h1>Security Alerts</h1>
+            <div>
+                <h1>Security Alerts</h1>
+                <p>Escalated events awaiting analyst triage</p>
+            </div>
 
             <div id="clock"></div>
 
@@ -92,40 +116,62 @@
                 <h2 id="totalAlerts">0</h2>
             </div>
 
-            <div class="card">
+            <div class="card critical">
                 <h3>Critical</h3>
                 <h2 id="criticalCount">0</h2>
             </div>
 
-            <div class="card">
-                <h3>Open Alerts</h3>
+            <div class="card open">
+                <h3>Open</h3>
                 <h2 id="openCount">0</h2>
             </div>
 
-            <div class="card">
+            <div class="card acknowledged">
+                <h3>Acknowledged</h3>
+                <h2 id="acknowledgedCount">0</h2>
+            </div>
+
+            <div class="card resolved">
                 <h3>Resolved</h3>
                 <h2 id="resolvedCount">0</h2>
             </div>
 
         </section>
 
-        <!-- Search -->
+        <!-- Controls -->
 
         <section class="controls">
 
             <input
                 type="text"
                 id="searchAlert"
-                placeholder="Search Alert...">
+                placeholder="Search attack, IP or description...">
 
             <select id="priorityFilter">
-
-                <option value="ALL">All Priority</option>
-                <option value="CRITICAL">Critical</option>
-                <option value="HIGH">High</option>
-                <option value="MEDIUM">Medium</option>
-
+                <option value="ALL">All Severity</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
             </select>
+
+            <select id="statusFilter">
+                <option value="ALL">All Status</option>
+                <option value="Open">Open</option>
+                <option value="Acknowledged">Acknowledged</option>
+                <option value="Resolved">Resolved</option>
+            </select>
+
+            <select id="limitSelect">
+                <option value="25">25 / page</option>
+                <option value="50">50 / page</option>
+                <option value="100">100 / page</option>
+            </select>
+
+            <button class="btn btn-ghost" id="refreshBtn">
+                <i class="fa-solid fa-rotate"></i>
+                Refresh
+            </button>
 
         </section>
 
@@ -133,28 +179,38 @@
 
         <section class="table-section">
 
-            <table>
+            <div class="table-scroll">
 
-                <thead>
+                <table>
 
-                    <tr>
+                    <thead>
 
-                        <th>Time</th>
-                        <th>Priority</th>
-                        <th>Source IP</th>
-                        <th>Attack</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <tr>
 
-                    </tr>
+                            <th>Time</th>
+                            <th>Severity</th>
+                            <th>Source IP</th>
+                            <th>Attack</th>
+                            <th>Status</th>
+                            <th>Action</th>
 
-                </thead>
+                        </tr>
 
-                <tbody id="alertTable">
+                    </thead>
 
-                </tbody>
+                    <tbody id="alertTable">
 
-            </table>
+                        <tr>
+                            <td colspan="6" class="empty-state">Loading alerts...</td>
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <div class="pagination" id="alertPagination"></div>
 
         </section>
 
@@ -162,7 +218,10 @@
 
 </div>
 
+<script src="api.js"></script>
+
 <script src="alerts.js"></script>
 
 </body>
+
 </html>

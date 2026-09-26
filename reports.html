@@ -3,17 +3,22 @@
 
 <head>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
 
-<title>Sentinel SIEM - Reports</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="stylesheet" href="reports.css">
+    <title>Sentinel SIEM - Reports</title>
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="layout.css">
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="components.css">
+
+    <link rel="stylesheet" href="reports.css">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 </head>
 
@@ -21,163 +26,212 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
 
 <div class="container">
 
-<!-- Sidebar -->
+    <aside class="sidebar">
 
-<aside class="sidebar">
+        <div class="logo">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h2>Sentinel SIEM</h2>
+        </div>
 
-<div class="logo">
+        <ul class="menu">
 
-<i class="fa-solid fa-shield-halved"></i>
+            <li>
+                <a href="dashboard.html">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+            </li>
 
-<h2>Sentinel SIEM</h2>
+            <li>
+                <a href="logs.html">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Logs
+                </a>
+            </li>
+
+            <li>
+                <a href="alerts.html">
+                    <i class="fa-solid fa-bell"></i>
+                    Alerts
+                </a>
+            </li>
+
+            <li>
+                <a href="incidents.html">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Incidents
+                </a>
+            </li>
+
+            <li class="active">
+                <a href="reports.html">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    Reports
+                </a>
+            </li>
+
+            <li data-admin-only>
+                <a href="users.html">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+            </li>
+
+            <li data-admin-only>
+                <a href="settings.html">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </li>
+
+            <li>
+                <a href="#" onclick="logout(); return false;">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </li>
+
+        </ul>
+
+    </aside>
+
+    <main class="main">
+
+        <header class="header">
+
+            <div>
+                <h1>Security Reports</h1>
+                <p>Generated <span id="reportGenerated">-</span></p>
+            </div>
+
+            <div id="clock"></div>
+
+        </header>
+
+        <!-- Cards -->
+
+        <section class="cards">
+
+            <div class="card">
+                <h3>Total Logs</h3>
+                <h2 id="logsCount">0</h2>
+                <p class="delta" id="logsDelta"></p>
+            </div>
+
+            <div class="card">
+                <h3>Active Alerts</h3>
+                <h2 id="alertsCount">0</h2>
+                <p class="delta" id="alertsDelta"></p>
+            </div>
+
+            <div class="card">
+                <h3>Open Incidents</h3>
+                <h2 id="incidentCount">0</h2>
+                <p class="delta" id="incidentsDelta"></p>
+            </div>
+
+            <div class="card">
+                <h3>Threat Score</h3>
+                <h2 id="threatScore">0%</h2>
+                <p>Current Risk</p>
+            </div>
+
+            <div class="card">
+                <h3>Online Hosts</h3>
+                <h2 id="onlineHosts">0</h2>
+                <p>Distinct Sources</p>
+            </div>
+
+        </section>
+
+        <!-- Secondary figures -->
+
+        <section class="cards secondary">
+
+            <div class="card">
+                <h3>Critical Alerts</h3>
+                <h2 id="criticalAlerts">0</h2>
+                <p>Immediate Response</p>
+            </div>
+
+        </section>
+
+        <!-- Charts -->
+
+        <section class="charts">
+
+            <div class="chart-card">
+                <h3>Events per Hour <small>last 24 hours</small></h3>
+                <div class="chart-box">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3>Threat Distribution</h3>
+                <div class="chart-box">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Breakdown -->
+
+        <section class="table-card">
+
+            <h3>Severity Breakdown</h3>
+
+            <p class="peak">
+                Busiest hour: <strong id="peakHour">-</strong>
+            </p>
+
+            <div class="table-scroll">
+
+                <table class="breakdown">
+
+                    <thead>
+                        <tr>
+                            <th>Severity</th>
+                            <th>Count</th>
+                            <th>Share</th>
+                            <th>Distribution</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="severityBreakdown">
+                        <tr>
+                            <td colspan="4" class="empty-state">Building report...</td>
+                        </tr>
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+        <!-- Export -->
+
+        <section class="export">
+
+            <button class="btn" id="csvBtn">
+                <i class="fa-solid fa-file-csv"></i>
+                Export CSV
+            </button>
+
+            <button class="btn btn-ghost" id="pdfBtn">
+                <i class="fa-solid fa-file-pdf"></i>
+                Export PDF
+            </button>
+
+        </section>
+
+    </main>
 
 </div>
 
-<ul class="menu">
-
-<li>
-<a href="dashboard.html">
-<i class="fa-solid fa-chart-line"></i>
-Dashboard
-</a>
-</li>
-
-<li>
-<a href="logs.html">
-<i class="fa-solid fa-file-lines"></i>
-Logs
-</a>
-</li>
-
-<li>
-<a href="alerts.html">
-<i class="fa-solid fa-bell"></i>
-Alerts
-</a>
-</li>
-
-<li>
-<a href="incidents.html">
-<i class="fa-solid fa-triangle-exclamation"></i>
-Incidents
-</a>
-</li>
-
-<li class="active">
-<a href="reports.html">
-<i class="fa-solid fa-chart-pie"></i>
-Reports
-</a>
-</li>
-
-<li>
-<a href="index.html">
-<i class="fa-solid fa-right-from-bracket"></i>
-Logout
-</a>
-</li>
-
-</ul>
-
-</aside>
-
-<!-- Main -->
-
-<main class="main">
-
-<header class="header">
-
-<h1>Security Reports</h1>
-
-<div id="clock"></div>
-
-</header>
-
-<!-- Cards -->
-
-<section class="cards">
-
-<div class="card">
-
-<h3>Total Logs</h3>
-
-<h2 id="logsCount">0</h2>
-
-</div>
-
-<div class="card">
-
-<h3>Total Alerts</h3>
-
-<h2 id="alertsCount">0</h2>
-
-</div>
-
-<div class="card">
-
-<h3>Total Incidents</h3>
-
-<h2 id="incidentCount">0</h2>
-
-</div>
-
-<div class="card">
-
-<h3>Threat Score</h3>
-
-<h2 id="threatScore">0%</h2>
-
-</div>
-
-</section>
-
-<!-- Charts -->
-
-<section class="charts">
-
-<div class="chart-card">
-
-<h3>Weekly Events</h3>
-
-<canvas id="weeklyChart"></canvas>
-
-</div>
-
-<div class="chart-card">
-
-<h3>Threat Distribution</h3>
-
-<canvas id="pieChart"></canvas>
-
-</div>
-
-</section>
-
-<!-- Export -->
-
-<section class="export">
-
-<button id="csvBtn">
-
-<i class="fa-solid fa-file-csv"></i>
-
-Export CSV
-
-</button>
-
-<button id="pdfBtn">
-
-<i class="fa-solid fa-file-pdf"></i>
-
-Export PDF
-
-</button>
-
-</section>
-
-</main>
-
-</div>
+<script src="api.js"></script>
 
 <script src="reports.js"></script>
 

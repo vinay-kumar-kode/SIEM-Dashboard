@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sentinel SIEM - Settings</title>
+
+    <link rel="stylesheet" href="layout.css">
+
+    <link rel="stylesheet" href="components.css">
+
+    <link rel="stylesheet" href="settings.css">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h2>Sentinel SIEM</h2>
+        </div>
+
+        <ul class="menu">
+
+            <li>
+                <a href="dashboard.html">
+                    <i class="fa-solid fa-chart-line"></i>
+                    Dashboard
+                </a>
+            </li>
+
+            <li>
+                <a href="logs.html">
+                    <i class="fa-solid fa-file-lines"></i>
+                    Logs
+                </a>
+            </li>
+
+            <li>
+                <a href="alerts.html">
+                    <i class="fa-solid fa-bell"></i>
+                    Alerts
+                </a>
+            </li>
+
+            <li>
+                <a href="incidents.html">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Incidents
+                </a>
+            </li>
+
+            <li>
+                <a href="reports.html">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    Reports
+                </a>
+            </li>
+
+            <li data-admin-only>
+                <a href="users.html">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+            </li>
+
+            <li class="active" data-admin-only>
+                <a href="settings.html">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </li>
+
+            <li>
+                <a href="#" onclick="logout(); return false;">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    Logout
+                </a>
+            </li>
+
+        </ul>
+
+    </aside>
+
+    <main class="main">
+
+        <header class="header">
+
+            <div>
+                <h1>SOC Settings</h1>
+                <p>Last saved <span id="settingsUpdated">-</span></p>
+            </div>
+
+            <div id="clock"></div>
+
+        </header>
+
+        <form class="settings-form" id="settingsForm" autocomplete="off">
+
+            <div class="panel">
+
+                <h3>Organisation</h3>
+
+                <div class="field">
+                    <label for="orgName">Organisation name</label>
+                    <input type="text" id="orgName" placeholder="Sentinel SIEM">
+                    <p class="field-hint">Shown in the dashboard header.</p>
+                </div>
+
+            </div>
+
+            <div class="panel">
+
+                <h3>Collection</h3>
+
+                <div class="field-row">
+
+                    <div class="field">
+                        <label for="refreshInterval">Auto-refresh interval (ms)</label>
+                        <input type="number" id="refreshInterval" min="2000" max="300000" step="500">
+                        <p class="field-hint">Between 2000 and 300000. The dashboard polls at this rate.</p>
+                    </div>
+
+                    <div class="field">
+                        <label for="logRetention">Log retention (days)</label>
+                        <input type="number" id="logRetention" min="1" max="3650">
+                        <p class="field-hint">Between 1 and 3650 days.</p>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="panel">
+
+                <h3>Escalation</h3>
+
+                <div class="field">
+                    <label for="escalateSeverity">Auto-escalate at or above</label>
+                    <select id="escalateSeverity">
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                    <p class="field-hint">Alerts at this severity or higher are escalated automatically.</p>
+                </div>
+
+                <div class="switch-row">
+                    <div class="switch-text">
+                        <strong>Mask source IPs in reports</strong>
+                        <span>Replaces addresses with a partial hash when exporting.</span>
+                    </div>
+                    <input type="checkbox" id="maskIp">
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-ghost" id="resetBtn">Reset</button>
+                <button type="button" class="btn" id="saveBtn">Save Changes</button>
+            </div>
+
+        </form>
+
+    </main>
+
+</div>
+
+<script src="api.js"></script>
+
+<script src="settings.js"></script>
+
+</body>
+
+</html>

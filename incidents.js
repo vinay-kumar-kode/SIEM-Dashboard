@@ -2,301 +2,376 @@
 // Sentinel SIEM - Incident Management
 // incidents.js
 // ======================================
+//
+// Rows come from GET /api/incidents. Assignment and closure go through the
+// real PATCH endpoints, so the incident lifecycle is persisted rather than
+// reset on every reload.
 
-// ---------- Current Time ----------
+const state = {
 
-function getCurrentTime() {
+    page: 1,
 
-    const now = new Date();
+    limit: 25,
 
-    return now.toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false
+    status: "ALL",
+
+    priority: "ALL",
+
+    search: "",
+
+    rows: []
+};
+
+const busy = new Set();
+
+// Analysts available to assign. Read from the user list so a newly created
+// account is assignable without touching this file.
+let analysts = [];
+
+// ---------- Render ----------
+
+const renderRows = (rows) => {
+
+    const body = document.getElementById("incidentTable");
+
+    if (!body) {
+        return;
+    }
+
+    if (!rows.length) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="7" class="empty-state">
+                    <strong>No matching incidents</strong>
+                    Try a different status or clear the search box.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    body.innerHTML = rows.map(incident => {
+
+        const locked = busy.has(incident._id);
+        const closed = incident.status === "Closed";
+
+        return `
+        <tr class="row-fade">
+            <td class="mono">${escapeHtml(incident.incidentId)}</td>
+            <td>${escapeHtml(formatDateTime(incident.timestamp))}</td>
+            <td><span class="badge badge-${severityClass(incident.priority)}">${escapeHtml(incident.priority)}</span></td>
+            <td class="left" title="${escapeHtml(incident.description || "")}">${escapeHtml(incident.title)}</td>
+            <td>${escapeHtml(incident.assignedTo || "Unassigned")}</td>
+            <td><span class="badge badge-${String(incident.status || "").toLowerCase().replace(/\s+/g, "-")}">${escapeHtml(incident.status)}</span></td>
+            <td class="actions">
+                ${closed
+                    ? `<span class="muted">${escapeHtml(formatRelative(incident.closedAt))}</span>`
+                    : `
+                    <button class="btn btn-sm btn-ghost" data-assign="${incident._id}" ${locked ? "disabled" : ""}>
+                        ${incident.assignedTo && incident.assignedTo !== "Unassigned" ? "Reassign" : "Assign"}
+                    </button>
+                    <button class="btn btn-sm btn-ok" data-close="${incident._id}" ${locked ? "disabled" : ""}>
+                        Close
+                    </button>
+                `}
+            </td>
+        </tr>
+    `;
+
+    }).join("");
+
+    body.querySelectorAll("[data-assign]").forEach(button => {
+        button.addEventListener("click", () => openAssignModal(button.dataset.assign));
     });
 
-}
-
-// ---------- Live Clock ----------
-
-function updateClock() {
-    document.getElementById("clock").innerHTML = getCurrentTime();
-}
-
-updateClock();
-setInterval(updateClock,1000);
-
-// ---------- Analysts ----------
-
-const analysts=[
-"John",
-"Alice",
-"David",
-"Michael",
-"Sophia"
-];
-
-// ---------- Incident Data ----------
-
-let incidentNumber=1001;
-
-let incidents=[
-
-{
-id:"INC-1001",
-time:getCurrentTime(),
-priority:"CRITICAL",
-title:"SQL Injection Attack",
-assigned:"John",
-status:"Open"
-},
-
-{
-id:"INC-1002",
-time:getCurrentTime(),
-priority:"HIGH",
-title:"Port Scan Detected",
-assigned:"Alice",
-status:"In Progress"
-},
-
-{
-id:"INC-1003",
-time:getCurrentTime(),
-priority:"MEDIUM",
-title:"Multiple Failed Login",
-assigned:"David",
-status:"Closed"
-}
-
-];
-
-// ---------- Load Incidents ----------
-
-function loadIncidents(data=incidents){
-
-let html="";
-
-let open=0;
-let progress=0;
-let closed=0;
-
-data.forEach((incident,index)=>{
-
-if(incident.status==="Open") open++;
-
-if(incident.status==="In Progress") progress++;
-
-if(incident.status==="Closed") closed++;
-
-let priorityClass=incident.priority.toLowerCase();
-
-let statusClass="";
-
-if(incident.status==="Open")
-statusClass="open";
-
-else if(incident.status==="In Progress")
-statusClass="progress";
-
-else
-statusClass="closed";
-
-html+=`
-
-<tr>
-
-<td>${incident.id}</td>
-
-<td>${incident.time}</td>
-
-<td class="${priorityClass}">
-${incident.priority}
-</td>
-
-<td>${incident.title}</td>
-
-<td>${incident.assigned}</td>
-
-<td class="${statusClass}">
-${incident.status}
-</td>
-
-<td>
-
-<button
-class="assign-btn"
-onclick="assignIncident(${index})">
-
-Assign
-
-</button>
-
-<button
-class="close-btn"
-onclick="closeIncident(${index})">
-
-Close
-
-</button>
-
-</td>
-
-</tr>
-
-`;
-
-});
-
-document.getElementById("incidentTable").innerHTML=html;
-
-document.getElementById("totalIncidents").innerHTML=data.length;
-
-document.getElementById("openIncidents").innerHTML=open;
-
-document.getElementById("progressIncidents").innerHTML=progress;
-
-document.getElementById("closedIncidents").innerHTML=closed;
-
-}
-
-loadIncidents();
-
-// ---------- Search ----------
-
-document.getElementById("searchIncident")
-.addEventListener("keyup",function(){
-
-const value=this.value.toLowerCase();
-
-const filtered=incidents.filter(incident=>
-
-incident.id.toLowerCase().includes(value)||
-
-incident.title.toLowerCase().includes(value)||
-
-incident.assigned.toLowerCase().includes(value)
-
-);
-
-loadIncidents(filtered);
-
-});
-
-// ---------- Status Filter ----------
-
-document.getElementById("statusFilter")
-.addEventListener("change",function(){
-
-const status=this.value;
-
-if(status==="ALL"){
-
-loadIncidents();
-
-return;
-
-}
-
-const filtered=incidents.filter(
-incident=>incident.status===status
-);
-
-loadIncidents(filtered);
-
-});
-
-// ---------- Assign ----------
-
-function assignIncident(index){
-
-const analyst=
-
-analysts[Math.floor(Math.random()*analysts.length)];
-
-incidents[index].assigned=analyst;
-
-incidents[index].status="In Progress";
-
-loadIncidents();
-
-}
-
-// ---------- Close ----------
-
-function closeIncident(index){
-
-incidents[index].status="Closed";
-
-loadIncidents();
-
-}
-
-// ---------- Random Data ----------
-
-const attacks=[
-
-"SQL Injection Attack",
-"Port Scan Detected",
-"Malware Infection",
-"Brute Force Attack",
-"DDoS Attempt",
-"XSS Attack",
-"Privilege Escalation",
-"Unauthorized Access"
-
-];
-
-const priorities=[
-
-"MEDIUM",
-"HIGH",
-"CRITICAL"
-
-];
-
-// ---------- Auto Incident ----------
-
-function createIncident(){
-
-incidentNumber++;
-
-const newIncident={
-
-id:"INC-"+incidentNumber,
-
-time:getCurrentTime(),
-
-priority:priorities[
-Math.floor(Math.random()*priorities.length)
-],
-
-title:attacks[
-Math.floor(Math.random()*attacks.length)
-],
-
-assigned:"Unassigned",
-
-status:"Open"
+    body.querySelectorAll("[data-close]").forEach(button => {
+        button.addEventListener("click", () => closeIncident(button.dataset.close));
+    });
 
 };
 
-incidents.unshift(newIncident);
+const renderSummary = (stats) => {
 
-if(incidents.length>100){
+    setText("totalIncidents", stats.total);
+    setText("openIncidents", stats.open);
+    setText("progressIncidents", stats.inProgress);
+    setText("closedIncidents", stats.closed);
+    setText("unassignedCount", stats.unassigned);
 
-incidents.pop();
+};
 
+// ---------- Load ----------
+
+const load = async () => {
+
+    try {
+
+        const query = buildQuery({
+            page: state.page,
+            limit: state.limit,
+            status: state.status,
+            priority: state.priority,
+            search: state.search
+        });
+
+        const data = await apiGet(`/incidents${query}`);
+
+        if (data.page > data.pages) {
+            state.page = data.pages;
+            return load();
+        }
+
+        state.rows = data.data;
+
+        renderRows(data.data);
+
+        renderPagination("incidentPagination", data, page => {
+            state.page = page;
+            load();
+        });
+
+    } catch (error) {
+
+        console.error(error);
+        toast(error.message || "Could not load incidents", "error");
+
+    }
+
+};
+
+const loadStats = async () => {
+
+    try {
+
+        const data = await apiGet("/incidents/stats");
+
+        renderSummary(data.statistics);
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+};
+
+// Assigning needs a list of who exists. Failure here is not fatal: the
+// incident list still works, the analyst just types a name instead.
+const loadAnalysts = async () => {
+
+    try {
+
+        const data = await apiGet("/users");
+
+        analysts = data.data
+            .filter(user => user.active)
+            .map(user => ({ id: user._id, name: user.displayName, role: user.role }));
+
+        const select = document.getElementById("assignSelect");
+
+        if (select) {
+            select.innerHTML = analysts
+                .map(a => `<option value="${escapeHtml(a.name)}">${escapeHtml(a.name)} (${escapeHtml(a.role)})</option>`)
+                .join("");
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+};
+
+// ---------- Actions ----------
+
+let assigningId = null;
+
+const openAssignModal = (id) => {
+
+    assigningId = id;
+
+    const incident = state.rows.find(row => row._id === id);
+
+    const title = document.getElementById("assignIncidentTitle");
+
+    if (title && incident) {
+        title.textContent = `${incident.incidentId} - ${incident.title}`;
+    }
+
+    const backdrop = document.getElementById("assignModal");
+
+    if (backdrop) {
+        backdrop.classList.add("open");
+    }
+
+};
+
+const closeModal = () => {
+
+    assigningId = null;
+
+    const backdrop = document.getElementById("assignModal");
+
+    if (backdrop) {
+        backdrop.classList.remove("open");
+    }
+
+};
+
+const submitAssign = async () => {
+
+    if (!assigningId) {
+        return;
+    }
+
+    const select = document.getElementById("assignSelect");
+    const value = select ? select.value.trim() : "";
+
+    if (!value) {
+        toast("Pick an analyst", "warn");
+        return;
+    }
+
+    busy.add(assigningId);
+
+    try {
+
+        await apiPatch(`/incidents/${assigningId}/assign`, { assignedTo: value });
+
+        toast(`Assigned to ${value}`, "success");
+
+        closeModal();
+        await load();
+        await loadStats();
+
+    } catch (error) {
+
+        toast(error.message || "Assignment failed", "error");
+
+    } finally {
+
+        busy.delete(assigningId);
+
+    }
+
+};
+
+const closeIncident = async (id) => {
+
+    const resolution = prompt("Resolution summary (optional):", "Containment verified, no further action required.");
+
+    // prompt() returns null on Cancel and "" on OK-with-empty. Only an
+    // explicit cancel should abort.
+    if (resolution === null) {
+        return;
+    }
+
+    busy.add(id);
+
+    try {
+
+        await apiPatch(`/incidents/${id}/close`, { resolution });
+
+        toast("Incident closed", "success");
+
+        await load();
+        await loadStats();
+
+    } catch (error) {
+
+        toast(error.message || "Could not close incident", "error");
+
+    } finally {
+
+        busy.delete(id);
+
+    }
+
+};
+
+// ---------- Controls ----------
+
+const initControls = () => {
+
+    const search = document.getElementById("searchIncident");
+
+    search.addEventListener("input", debounce(() => {
+        state.search = search.value.trim();
+        state.page = 1;
+        load();
+    }, 350));
+
+    const bindSelect = (id, key) => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.addEventListener("change", () => {
+            state[key] = select.value;
+            state.page = 1;
+            load();
+        });
+    };
+
+    bindSelect("statusFilter", "status");
+    bindSelect("priorityFilter", "priority");
+
+    const limit = document.getElementById("limitSelect");
+    if (limit) {
+        limit.addEventListener("change", () => {
+            state.limit = parseInt(limit.value, 10);
+            state.page = 1;
+            load();
+        });
+    }
+
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+        load();
+        loadStats();
+    });
+
+    const confirmBtn = document.getElementById("assignConfirm");
+
+    if (confirmBtn) {
+        confirmBtn.addEventListener("click", submitAssign);
+    }
+
+    const cancelBtn = document.getElementById("assignCancel");
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", closeModal);
+    }
+
+    const backdrop = document.getElementById("assignModal");
+
+    if (backdrop) {
+        // Click the dimmed area to dismiss, but not the dialog itself.
+        backdrop.addEventListener("click", event => {
+            if (event.target === backdrop) {
+                closeModal();
+            }
+        });
+    }
+
+};
+
+// ---------- Start ----------
+
+const initIncidents = async () => {
+
+    if (!initPage()) {
+        return;
+    }
+
+    initControls();
+
+    await loadAnalysts();
+    await load();
+    await loadStats();
+
+};
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initIncidents);
+} else {
+    initIncidents();
 }
-
-loadIncidents();
-
-}
-
-// Create a new incident every 15 seconds
-
-setInterval(createIncident,15000);

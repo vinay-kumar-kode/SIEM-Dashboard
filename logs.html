@@ -10,6 +10,10 @@
 
     <title>Sentinel SIEM - Logs</title>
 
+    <link rel="stylesheet" href="layout.css">
+
+    <link rel="stylesheet" href="components.css">
+
     <link rel="stylesheet" href="logs.css">
 
     <link rel="stylesheet"
@@ -20,8 +24,6 @@
 <body>
 
 <div class="container">
-
-    <!-- Sidebar -->
 
     <aside class="sidebar">
 
@@ -57,7 +59,35 @@
             </li>
 
             <li>
-                <a href="index.html">
+                <a href="incidents.html">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Incidents
+                </a>
+            </li>
+
+            <li>
+                <a href="reports.html">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    Reports
+                </a>
+            </li>
+
+            <li data-admin-only>
+                <a href="users.html">
+                    <i class="fa-solid fa-users"></i>
+                    Users
+                </a>
+            </li>
+
+            <li data-admin-only>
+                <a href="settings.html">
+                    <i class="fa-solid fa-gear"></i>
+                    Settings
+                </a>
+            </li>
+
+            <li>
+                <a href="#" onclick="logout(); return false;">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     Logout
                 </a>
@@ -67,17 +97,49 @@
 
     </aside>
 
-    <!-- Main -->
-
     <main class="main">
 
         <header class="header">
 
-            <h1>Security Logs</h1>
+            <div>
+                <h1>Security Logs</h1>
+                <p>Raw events collected from every monitored source</p>
+            </div>
 
             <div id="clock"></div>
 
         </header>
+
+        <!-- Summary -->
+
+        <section class="summary">
+
+            <div class="summary-card">
+                <h3>Total Logs</h3>
+                <h2 id="logCount">0</h2>
+            </div>
+
+            <div class="summary-card critical">
+                <h3>Critical</h3>
+                <h2 id="criticalCount">0</h2>
+            </div>
+
+            <div class="summary-card high">
+                <h3>High</h3>
+                <h2 id="highCount">0</h2>
+            </div>
+
+            <div class="summary-card medium">
+                <h3>Medium</h3>
+                <h2 id="mediumCount">0</h2>
+            </div>
+
+            <div class="summary-card low">
+                <h3>Low</h3>
+                <h2 id="lowCount">0</h2>
+            </div>
+
+        </section>
 
         <!-- Controls -->
 
@@ -86,43 +148,47 @@
             <input
                 type="text"
                 id="searchBox"
-                placeholder="Search IP or Event...">
+                placeholder="Search IP, event or message...">
 
             <select id="severityFilter">
-
                 <option value="ALL">All Severity</option>
-
-                <option value="LOW">LOW</option>
-
-                <option value="MEDIUM">MEDIUM</option>
-
-                <option value="HIGH">HIGH</option>
-
-                <option value="CRITICAL">CRITICAL</option>
-
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
             </select>
 
-            <button id="exportBtn">
+            <select id="sourceFilter">
+                <option value="ALL">All Sources</option>
+            </select>
 
-                <i class="fa-solid fa-download"></i>
+            <select id="statusFilter">
+                <option value="ALL">All Status</option>
+                <option value="New">New</option>
+                <option value="Monitoring">Monitoring</option>
+                <option value="Closed">Closed</option>
+            </select>
 
-                Export
+            <select id="limitSelect">
+                <option value="25">25 / page</option>
+                <option value="50">50 / page</option>
+                <option value="100">100 / page</option>
+            </select>
 
+            <label class="live-toggle">
+                <input type="checkbox" id="liveToggle">
+                Live
+            </label>
+
+            <button class="btn btn-ghost" id="refreshBtn">
+                <i class="fa-solid fa-rotate"></i>
+                Refresh
             </button>
 
-        </section>
-
-        <!-- Summary -->
-
-        <section class="summary">
-
-            <div class="summary-card">
-
-                <h3>Total Logs</h3>
-
-                <h2 id="logCount">0</h2>
-
-            </div>
+            <button class="btn" id="exportBtn">
+                <i class="fa-solid fa-download"></i>
+                Export CSV
+            </button>
 
         </section>
 
@@ -130,37 +196,46 @@
 
         <section class="table-section">
 
-            <table>
+            <div class="table-scroll">
 
-                <thead>
+                <table>
 
-                    <tr>
+                    <thead>
 
-                        <th>Time</th>
+                        <tr>
 
-                        <th>Source IP</th>
+                            <th>Time</th>
+                            <th>Source IP</th>
+                            <th>Source</th>
+                            <th>Severity</th>
+                            <th>Event</th>
+                            <th>Status</th>
 
-                        <th>Severity</th>
+                        </tr>
 
-                        <th>Event</th>
+                    </thead>
 
-                        <th>Status</th>
+                    <tbody id="logsTable">
 
-                    </tr>
+                        <tr>
+                            <td colspan="6" class="empty-state">Loading logs...</td>
+                        </tr>
 
-                </thead>
+                    </tbody>
 
-                <tbody id="logsTable">
+                </table>
 
-                </tbody>
+            </div>
 
-            </table>
+            <div class="pagination" id="logsPagination"></div>
 
         </section>
 
     </main>
 
 </div>
+
+<script src="api.js"></script>
 
 <script src="logs.js"></script>
 

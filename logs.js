@@ -2,262 +2,321 @@
 // Sentinel SIEM - Logs Module
 // logs.js
 // ======================================
+//
+// Replaces the earlier hardcoded array. Every row now comes from
+// GET /api/logs, which is server-paginated: the browser asks for one page at
+// a time and the server reports how many pages matched the filter.
+//
+// The filter state lives in `state` and is the single source of truth. Any
+// change to it calls load(), which is the only function that talks to the API.
 
-// ---------- Current Time ----------
+const state = {
 
-function getCurrentTime() {
+    page: 1,
 
-    const now = new Date();
+    limit: 25,
 
-    return now.toLocaleString("en-IN", {
+    severity: "ALL",
 
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: false
+    source: "ALL",
 
-    });
+    status: "ALL",
 
-}
+    search: "",
 
-// ---------- Live Clock ----------
+    // Last page returned, kept so Export can reuse the current filter
+    // without a second round trip.
+    rows: []
+};
 
-function updateClock() {
+let refreshTimer = null;
 
-    document.getElementById("clock").innerHTML = getCurrentTime();
+// ---------- Render ----------
 
-}
+const renderRows = (rows) => {
 
-updateClock();
+    const body = document.getElementById("logsTable");
 
-setInterval(updateClock,1000);
-
-// ---------- Sample Data ----------
-
-let logs = [
-
-{
-time:getCurrentTime(),
-ip:"192.168.1.10",
-severity:"LOW",
-event:"User Login",
-status:"Closed"
-},
-
-{
-time:getCurrentTime(),
-ip:"192.168.1.21",
-severity:"MEDIUM",
-event:"Failed Login",
-status:"Monitoring"
-},
-
-{
-time:getCurrentTime(),
-ip:"192.168.1.35",
-severity:"HIGH",
-event:"Port Scan",
-status:"Open"
-},
-
-{
-time:getCurrentTime(),
-ip:"192.168.1.50",
-severity:"CRITICAL",
-event:"SQL Injection",
-status:"Open"
-}
-
-];
-
-// ---------- Load Logs ----------
-
-function loadLogs(data = logs){
-
-    let html = "";
-
-    data.forEach(log=>{
-
-        let severityClass = log.severity.toLowerCase();
-
-        let statusClass="";
-
-        if(log.status==="Open")
-            statusClass="status-open";
-
-        else if(log.status==="Monitoring")
-            statusClass="status-monitor";
-
-        else
-            statusClass="status-closed";
-
-        html+=`
-
-        <tr>
-
-            <td>${log.time}</td>
-
-            <td>${log.ip}</td>
-
-            <td class="${severityClass}">
-                ${log.severity}
-            </td>
-
-            <td>${log.event}</td>
-
-            <td class="${statusClass}">
-                ${log.status}
-            </td>
-
-        </tr>
-
-        `;
-
-    });
-
-    document.getElementById("logsTable").innerHTML=html;
-
-    document.getElementById("logCount").innerHTML=data.length;
-
-}
-
-loadLogs();
-
-// ---------- Search ----------
-
-document.getElementById("searchBox").addEventListener("keyup",function(){
-
-    const value=this.value.toLowerCase();
-
-    const filtered=logs.filter(log=>
-
-        log.ip.toLowerCase().includes(value) ||
-
-        log.event.toLowerCase().includes(value)
-
-    );
-
-    loadLogs(filtered);
-
-});
-
-// ---------- Severity Filter ----------
-
-document.getElementById("severityFilter").addEventListener("change",function(){
-
-    const level=this.value;
-
-    if(level==="ALL"){
-
-        loadLogs();
-
+    if (!body) {
         return;
+    }
+
+    if (!rows.length) {
+        body.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-state">
+                    <strong>No matching logs</strong>
+                    Try widening the severity filter or clearing the search box.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    body.innerHTML = rows.map(log => `
+        <tr class="row-fade">
+            <td>${escapeHtml(formatDateTime(log.timestamp))}</td>
+            <td>${escapeHtml(log.ipAddress || "-")}</td>
+            <td>${escapeHtml(log.source)}</td>
+            <td><span class="badge badge-${severityClass(log.severity)}">${escapeHtml(log.severity)}</span></td>
+            <td>${escapeHtml(log.eventType)}</td>
+            <td><span class="badge badge-${escapeHtml(String(log.status || "").toLowerCase())}">${escapeHtml(log.status || "-")}</span></td>
+        </tr>
+    `).join("");
+
+};
+
+const renderSummary = (data) => {
+
+    // The count reflects the whole filtered set, not just this page, which is
+    // what an operator wants to know ("38 critical", not "25 critical").
+    setText("logCount", data.total);
+
+    setText("criticalCount", data.critical);
+    setText("highCount", data.high);
+    setText("mediumCount", data.medium);
+    setText("lowCount", data.low);
+
+};
+
+// ---------- Load ----------
+
+const load = async () => {
+
+    try {
+
+        const query = buildQuery({
+            page: state.page,
+            limit: state.limit,
+            severity: state.severity,
+            source: state.source,
+            status: state.status,
+            search: state.search
+        });
+
+        const data = await apiGet(`/logs${query}`);
+
+        // A filter change can leave the viewer past the last page (page 7 of
+        // a 2 page result), so snap back rather than showing an empty table.
+        if (data.page > data.pages) {
+            state.page = data.pages;
+            return load();
+        }
+
+        state.rows = data.data;
+
+        renderRows(data.data);
+        renderPagination("logsPagination", data, page => {
+            state.page = page;
+            load();
+        });
+
+        // Totals are global, not per-filter, so they are read from the
+        // separate rollup endpoint rather than counted from the page.
+        loadStats();
+
+    } catch (error) {
+
+        console.error(error);
+        toast(error.message || "Could not load logs", "error");
 
     }
 
-    const filtered=logs.filter(log=>log.severity===level);
+};
 
-    loadLogs(filtered);
+const loadStats = async () => {
 
-});
+    try {
 
-// ---------- Random Data ----------
+        const data = await apiGet("/logs/stats");
 
-const attacks=[
+        renderSummary(data);
 
-"SQL Injection",
-"Port Scan",
-"Malware",
-"Brute Force",
-"Unauthorized Login",
-"File Modified",
-"DDoS Attack",
-"XSS Attack"
+    } catch (error) {
 
-];
+        console.error(error);
 
-const severities=[
+    }
 
-"LOW",
-"MEDIUM",
-"HIGH",
-"CRITICAL"
+};
 
-];
+// ---------- Export ----------
 
-const statuses=[
+// Exports exactly what is on screen: the current page, current filter. The
+// header is derived from the columns rather than hardcoded twice.
+const exportCsv = () => {
 
-"Closed",
-"Monitoring",
-"Open"
+    if (!state.rows.length) {
+        toast("Nothing to export on this page", "warn");
+        return;
+    }
 
-];
+    const header = ["Timestamp", "Source IP", "Source", "Severity", "Event Type", "Status", "Message"];
 
-function randomIP(){
+    const lines = [header.map(csvCell).join(",")];
 
-    return "192.168.1."+Math.floor(Math.random()*254+1);
+    state.rows.forEach(log => {
+        lines.push([
+            log.timestamp,
+            log.ipAddress,
+            log.source,
+            log.severity,
+            log.eventType,
+            log.status,
+            log.message
+        ].map(csvCell).join(","));
+    });
 
-}
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
 
-// ---------- Live Logs ----------
+    downloadFile(`siem-logs-${stamp}.csv`, lines.join("\n"));
 
-function addRandomLog(){
+    toast(`Exported ${state.rows.length} rows`, "success");
 
-    const newLog={
+};
 
-        time:getCurrentTime(),
+// ---------- Delete ----------
 
-        ip:randomIP(),
+const deleteLog = async (id) => {
 
-        severity:severities[Math.floor(Math.random()*4)],
+    if (!confirm("Delete this log entry? This cannot be undone.")) {
+        return;
+    }
 
-        event:attacks[Math.floor(Math.random()*attacks.length)],
+    try {
 
-        status:statuses[Math.floor(Math.random()*3)]
+        await apiDelete(`/logs/${id}`);
+        toast("Log deleted", "success");
+        load();
 
+    } catch (error) {
+
+        toast(error.message || "Delete failed", "error");
+
+    }
+
+};
+
+// ---------- Controls ----------
+
+// Populates the source dropdown from the data rather than hardcoding a list,
+// so a new source in the seed shows up without a code change.
+const loadSources = async () => {
+
+    try {
+
+        const data = await apiGet("/logs?limit=100");
+
+        const sources = [...new Set(data.data.map(log => log.source))].sort();
+
+        const select = document.getElementById("sourceFilter");
+
+        if (!select) {
+            return;
+        }
+
+        select.innerHTML =
+            `<option value="ALL">All Sources</option>` +
+            sources.map(source => `<option value="${escapeHtml(source)}">${escapeHtml(source)}</option>`).join("");
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+};
+
+const initControls = () => {
+
+    const search = document.getElementById("searchBox");
+
+    // Debounced: a fresh keystroke supersedes the pending request instead of
+    // racing it.
+    search.addEventListener("input", debounce(() => {
+        state.search = search.value.trim();
+        state.page = 1;
+        load();
+    }, 350));
+
+    const bindSelect = (id, key) => {
+        const select = document.getElementById(id);
+        if (!select) return;
+        select.addEventListener("change", () => {
+            state[key] = select.value;
+            state.page = 1;
+            load();
+        });
     };
 
-    logs.unshift(newLog);
+    bindSelect("severityFilter", "severity");
+    bindSelect("sourceFilter", "source");
+    bindSelect("statusFilter", "status");
 
-    if(logs.length>100){
-
-        logs.pop();
-
+    const limit = document.getElementById("limitSelect");
+    if (limit) {
+        limit.addEventListener("change", () => {
+            state.limit = parseInt(limit.value, 10);
+            state.page = 1;
+            load();
+        });
     }
 
-    loadLogs();
+    document.getElementById("exportBtn").addEventListener("click", exportCsv);
 
-}
-
-setInterval(addRandomLog,5000);
-
-// ---------- Export CSV ----------
-
-document.getElementById("exportBtn").addEventListener("click",()=>{
-
-    let csv="Time,IP,Severity,Event,Status\n";
-
-    logs.forEach(log=>{
-
-        csv+=`${log.time},${log.ip},${log.severity},${log.event},${log.status}\n`;
-
+    document.getElementById("refreshBtn").addEventListener("click", () => {
+        load();
+        toast("Refreshed", "info");
     });
 
-    const blob=new Blob([csv],{type:"text/csv"});
+    // Live tail. Off by default: with a filter applied a new matching row
+    // shifts the table under the reader, which is worse than a stale page.
+    const live = document.getElementById("liveToggle");
 
-    const url=URL.createObjectURL(blob);
+    const setLive = (on) => {
+        if (refreshTimer) {
+            clearInterval(refreshTimer);
+            refreshTimer = null;
+        }
+        if (on) {
+            refreshTimer = setInterval(() => {
+                // Never yank the viewer off the page they are reading.
+                if (document.visibilityState === "visible" && state.page === 1) {
+                    load();
+                }
+            }, 10000);
+        }
+    };
 
-    const a=document.createElement("a");
+    live.addEventListener("change", () => setLive(live.checked));
 
-    a.href=url;
+    // Honour a ?search= handed over by the dashboard header search.
+    const incoming = new URLSearchParams(window.location.search).get("search");
+    if (incoming) {
+        search.value = incoming;
+        state.search = incoming;
+    }
 
-    a.download="siem_logs.csv";
+};
 
-    a.click();
+// ---------- Start ----------
 
-    URL.revokeObjectURL(url);
+const initLogs = async () => {
 
-});
+    if (!initPage()) {
+        return;
+    }
+
+    initControls();
+
+    await loadSources();
+
+    await load();
+
+};
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initLogs);
+} else {
+    initLogs();
+}

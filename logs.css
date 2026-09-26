@@ -1,100 +1,3 @@
-/* ==========================================
-   Sentinel SIEM - Logs Page
-========================================== */
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:"Segoe UI",sans-serif;
-}
-
-body{
-    background:#0f172a;
-    color:#fff;
-}
-
-.container{
-    display:grid;
-    grid-template-columns:260px 1fr;
-    min-height:100vh;
-}
-
-/* Sidebar */
-
-.sidebar{
-    background:#111827;
-    padding:20px;
-    border-right:1px solid #1f2937;
-}
-
-.logo{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    margin-bottom:40px;
-}
-
-.logo i{
-    font-size:28px;
-    color:#38bdf8;
-}
-
-.logo h2{
-    color:#38bdf8;
-}
-
-.menu{
-    list-style:none;
-}
-
-.menu li{
-    margin-bottom:8px;
-}
-
-.menu li a{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    text-decoration:none;
-    color:white;
-    padding:14px;
-    border-radius:10px;
-    transition:.3s;
-}
-
-.menu li a:hover{
-    background:#1e293b;
-}
-
-.menu .active a{
-    background:#2563eb;
-}
-
-/* Main */
-
-.main{
-    padding:30px;
-}
-
-/* Header */
-
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:25px;
-}
-
-.header h1{
-    font-size:30px;
-}
-
-#clock{
-    color:#38bdf8;
-    font-weight:bold;
-}
-
 /* Controls */
 
 .controls{
@@ -108,7 +11,7 @@ body{
 .controls select{
     background:#111827;
     color:white;
-    border:none;
+    border:1px solid #334155;
     outline:none;
     padding:12px;
     border-radius:8px;
@@ -118,42 +21,79 @@ body{
     width:300px;
 }
 
-.controls button{
-    background:#2563eb;
-    color:white;
-    border:none;
-    padding:12px 20px;
+/* Buttons come from components.css (.btn). The old bare `.controls button`
+   rule is gone: its 0-1-1 specificity outranked .btn-ghost, so the Refresh
+   button rendered as a second primary button. */
+
+.live-toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:12px 16px;
+    border:1px solid #334155;
     border-radius:8px;
+    background:#111827;
+    color:#94a3b8;
+    font-size:14px;
+    font-weight:600;
     cursor:pointer;
-    transition:.3s;
+    user-select:none;
 }
 
-.controls button:hover{
-    background:#1d4ed8;
+.live-toggle input{
+    width:16px;
+    height:16px;
+    accent-color:#22c55e;
+    cursor:pointer;
+}
+
+.live-toggle:has(input:checked){
+    border-color:#22c55e;
+    color:#22c55e;
 }
 
 /* Summary */
 
 .summary{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:16px;
     margin-bottom:25px;
 }
 
 .summary-card{
-    width:220px;
     background:#111827;
-    padding:20px;
+    padding:18px 20px;
     border-left:5px solid #38bdf8;
     border-radius:12px;
 }
 
 .summary-card h3{
     color:#94a3b8;
+    font-size:14px;
 }
 
 .summary-card h2{
-    margin-top:10px;
-    font-size:36px;
+    margin-top:8px;
+    font-size:32px;
     color:#38bdf8;
+}
+
+.summary-card.critical{ border-left-color:#ef4444; }
+.summary-card.critical h2{ color:#ef4444; }
+.summary-card.high{ border-left-color:#fb923c; }
+.summary-card.high h2{ color:#fb923c; }
+.summary-card.medium{ border-left-color:#facc15; }
+.summary-card.medium h2{ color:#facc15; }
+.summary-card.low{ border-left-color:#22c55e; }
+.summary-card.low h2{ color:#22c55e; }
+
+@media(max-width:1200px){
+
+.summary{
+    grid-template-columns:repeat(2,1fr);
+}
+
 }
 
 /* Table */
@@ -162,90 +102,5 @@ body{
     background:#111827;
     padding:20px;
     border-radius:12px;
-    overflow:auto;
 }
 
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-th{
-    background:#2563eb;
-    padding:14px;
-}
-
-td{
-    padding:14px;
-    text-align:center;
-    border-bottom:1px solid #334155;
-}
-
-tbody tr:hover{
-    background:#1e293b;
-}
-
-/* Severity Colors */
-
-.low{
-    color:#22c55e;
-    font-weight:bold;
-}
-
-.medium{
-    color:#facc15;
-    font-weight:bold;
-}
-
-.high{
-    color:#fb923c;
-    font-weight:bold;
-}
-
-.critical{
-    color:#ef4444;
-    font-weight:bold;
-}
-
-/* Status */
-
-.status-open{
-    color:#ef4444;
-    font-weight:bold;
-}
-
-.status-monitor{
-    color:#facc15;
-    font-weight:bold;
-}
-
-.status-closed{
-    color:#22c55e;
-    font-weight:bold;
-}
-
-/* Responsive */
-
-@media(max-width:1000px){
-
-.container{
-    grid-template-columns:1fr;
-}
-
-.sidebar{
-    display:none;
-}
-
-.controls{
-    flex-direction:column;
-}
-
-.controls input{
-    width:100%;
-}
-
-.summary-card{
-    width:100%;
-}
-
-}

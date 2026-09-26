@@ -5,16 +5,15 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Sentinel SIEM - Incidents</title>
+    <title>Sentinel SIEM - Users</title>
 
     <link rel="stylesheet" href="layout.css">
 
     <link rel="stylesheet" href="components.css">
 
-    <link rel="stylesheet" href="incidents.css">
+    <link rel="stylesheet" href="users.css">
 
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -55,7 +54,7 @@
                 </a>
             </li>
 
-            <li class="active">
+            <li>
                 <a href="incidents.html">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     Incidents
@@ -69,7 +68,7 @@
                 </a>
             </li>
 
-            <li data-admin-only>
+            <li class="active" data-admin-only>
                 <a href="users.html">
                     <i class="fa-solid fa-users"></i>
                     Users
@@ -99,83 +98,41 @@
         <header class="header">
 
             <div>
-                <h1>Incident Management</h1>
-                <p>Escalated investigations and their resolution state</p>
+                <h1>User Management</h1>
+                <p>Accounts with access to this SOC</p>
             </div>
 
             <div id="clock"></div>
 
         </header>
 
-        <!-- Cards -->
-
         <section class="cards">
 
             <div class="card">
-                <h3>Total Incidents</h3>
-                <h2 id="totalIncidents">0</h2>
+                <h3>Total Accounts</h3>
+                <h2 id="totalUsers">0</h2>
             </div>
 
-            <div class="card open">
-                <h3>Open</h3>
-                <h2 id="openIncidents">0</h2>
+            <div class="card active">
+                <h3>Active</h3>
+                <h2 id="activeUsers">0</h2>
             </div>
 
-            <div class="card progress">
-                <h3>In Progress</h3>
-                <h2 id="progressIncidents">0</h2>
-            </div>
-
-            <div class="card closed">
-                <h3>Closed</h3>
-                <h2 id="closedIncidents">0</h2>
-            </div>
-
-            <div class="card unassigned">
-                <h3>Unassigned</h3>
-                <h2 id="unassignedCount">0</h2>
+            <div class="card admin">
+                <h3>Administrators</h3>
+                <h2 id="adminCount">0</h2>
             </div>
 
         </section>
-
-        <!-- Controls -->
 
         <section class="controls">
 
-            <input
-                type="text"
-                id="searchIncident"
-                placeholder="Search ID, title or analyst...">
-
-            <select id="statusFilter">
-                <option value="ALL">All Status</option>
-                <option value="Open">Open</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Closed">Closed</option>
-            </select>
-
-            <select id="priorityFilter">
-                <option value="ALL">All Priority</option>
-                <option value="Critical">Critical</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-            </select>
-
-            <select id="limitSelect">
-                <option value="25">25 / page</option>
-                <option value="50">50 / page</option>
-                <option value="100">100 / page</option>
-            </select>
-
-            <button class="btn btn-ghost" id="refreshBtn">
-                <i class="fa-solid fa-rotate"></i>
-                Refresh
+            <button class="btn" id="newUserBtn">
+                <i class="fa-solid fa-user-plus"></i>
+                New User
             </button>
 
         </section>
-
-        <!-- Table -->
 
         <section class="table-section">
 
@@ -187,22 +144,22 @@
 
                         <tr>
 
-                            <th>ID</th>
-                            <th>Time</th>
-                            <th>Priority</th>
-                            <th>Incident</th>
-                            <th>Assigned To</th>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Role</th>
                             <th>Status</th>
+                            <th>Last Login</th>
+                            <th>Created</th>
                             <th>Action</th>
 
                         </tr>
 
                     </thead>
 
-                    <tbody id="incidentTable">
+                    <tbody id="userTable">
 
                         <tr>
-                            <td colspan="7" class="empty-state">Loading incidents...</td>
+                            <td colspan="7" class="empty-state">Loading accounts...</td>
                         </tr>
 
                     </tbody>
@@ -211,42 +168,66 @@
 
             </div>
 
-            <div class="pagination" id="incidentPagination"></div>
-
         </section>
 
     </main>
 
 </div>
 
-<!-- Assign modal -->
+<!-- Create / edit user -->
 
-<div class="modal-backdrop" id="assignModal">
+<div class="modal-backdrop" id="userModal">
 
     <div class="modal">
 
         <div class="modal-header">
-            <h3>Assign Incident</h3>
+            <h3 id="userModalTitle">New User</h3>
             <button class="modal-close" onclick="closeModal()">&times;</button>
         </div>
 
         <div class="modal-body">
 
-            <p class="modal-subject" id="assignIncidentTitle"></p>
-
             <div class="field">
-                <label for="assignSelect">Analyst</label>
-                <select id="assignSelect"></select>
-                <p class="field-hint">
-                    Assigning moves the incident into "In Progress".
-                </p>
+                <label for="userDisplayName">Display name</label>
+                <input type="text" id="userDisplayName" placeholder="e.g. Alice Fernandes">
+            </div>
+
+            <div class="field-row">
+
+                <div class="field">
+                    <label for="userName">Username</label>
+                    <input type="text" id="userName" placeholder="e.g. alice" autocomplete="off">
+                </div>
+
+                <div class="field">
+                    <label for="userRole">Role</label>
+                    <select id="userRole">
+                        <option value="analyst">Analyst</option>
+                        <option value="admin">Administrator</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="field" id="userPasswordField">
+                <label for="userPassword">Password</label>
+                <input type="password" id="userPassword" placeholder="At least 6 characters" autocomplete="new-password">
+                <p class="field-hint" id="userPasswordHint">At least 6 characters.</p>
+            </div>
+
+            <div class="switch-row" id="userActiveRow" hidden>
+                <div class="switch-text">
+                    <strong>Account active</strong>
+                    <span>Disabled accounts cannot sign in.</span>
+                </div>
+                <input type="checkbox" id="userActive" checked>
             </div>
 
         </div>
 
         <div class="modal-footer">
-            <button class="btn btn-ghost" id="assignCancel">Cancel</button>
-            <button class="btn" id="assignConfirm">Assign</button>
+            <button class="btn btn-ghost" id="userCancel">Cancel</button>
+            <button class="btn" id="userSave">Save</button>
         </div>
 
     </div>
@@ -255,7 +236,7 @@
 
 <script src="api.js"></script>
 
-<script src="incidents.js"></script>
+<script src="users.js"></script>
 
 </body>
 
